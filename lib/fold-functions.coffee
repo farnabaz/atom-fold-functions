@@ -110,6 +110,7 @@ module.exports = AtomFoldFunctions =
 
   # Figure out the number of functions in this file.
   count: (editor) ->
+    @indentLevel = null
     if not editor
       editor = atom.workspace.getActiveTextEditor()
 
@@ -150,6 +151,7 @@ module.exports = AtomFoldFunctions =
       console.log.apply(console, arguments)
 
   fold: (action, editor) ->
+    @indentLevel = null
     if !action then action = 'fold'
     if not editor
       editor = atom.workspace.getActiveTextEditor()
@@ -201,7 +203,16 @@ module.exports = AtomFoldFunctions =
       @debugMessage('fold functions: is foldable', (foldable and isFunction and not isCommented), 'foldable', foldable, 'isFunction', isFunction, 'isCommented', isCommented)
       if isFunction and not (foldable and isFunction and not isCommented)
         @debugMessage('fold functions: line is a function, but cannot be folded', foldable, isCommented)
-      if foldable and isFunction and not isCommented
+      if foldable and not isFunction and not isCommented
+          isBeginingOfFunction = not editor.isFoldableAtBufferRow(row - 1) and @hasScopeAtBufferRow(
+            editor,
+            row - 1,
+            'meta.function',
+            'meta.method',
+            'storage.type.arrow',
+            'entity.name.function.constructor'
+          )
+      if (foldable and isFunction and not isCommented) or (foldable and isBeginingOfFunction)
         foldableLines++
         if @indentLevel == null
           @indentLevel = thisIndentLevel
